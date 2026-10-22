@@ -1,0 +1,31 @@
+# Put this file at .github/workflows/ai-news.yml in a GitHub repo that also contains
+# ai_news_webhook.py. Add your webhook as a repo secret named DISCORD_WEBHOOK_URL
+# (Settings -> Secrets and variables -> Actions). Runs free, no PC needed.
+name: AI News
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"   # every 20 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install feedparser requests
+      - run: python ai_news_webhook.py
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      - name: Save seen list
+        run: |
+          git config user.name "ai-news-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add seen.json
+          git diff --cached --quiet || (git commit -m "update seen" && git push)
